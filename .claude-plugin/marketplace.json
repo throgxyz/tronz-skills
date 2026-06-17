@@ -1,0 +1,20 @@
+{
+  "name": "tronz",
+  "owner": {
+    "name": "throgxyz",
+    "url": "https://github.com/throgxyz"
+  },
+  "metadata": {
+    "description": "Official skill/plugin for the tronz Rust SDK for TRON.",
+    "version": "0.1.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "tronz",
+      "source": "tronz",
+      "version": "0.1.0",
+      "description": "Write, review, and debug Rust code that uses the tronz SDK: providers, TRX/TRC10/TRC20 transfers, smart-contract call/deploy, event decoding, staking, and key management."
+    }
+  ]
+}
