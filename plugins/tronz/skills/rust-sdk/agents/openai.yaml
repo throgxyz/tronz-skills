@@ -1,0 +1,4 @@
+interface:
+  display_name: "tronz Rust SDK"
+  short_description: "Build reliable TRON clients in Rust with tronz"
+  default_prompt: "Use $rust-sdk to build a compiling tronz 0.3.x Rust client for my TRON task."

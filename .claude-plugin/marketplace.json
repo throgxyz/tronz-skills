@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "tronz",
   "owner": {
     "name": "throgxyz",
@@ -6,15 +7,14 @@
   },
   "metadata": {
     "description": "Official skill/plugin for the tronz Rust SDK for TRON.",
-    "version": "0.1.0",
-    "pluginRoot": "./plugins"
+    "version": "0.2.0"
   },
   "plugins": [
     {
       "name": "tronz",
-      "source": "tronz",
-      "version": "0.1.0",
-      "description": "Write, review, and debug Rust code that uses the tronz SDK: providers, TRX/TRC10/TRC20 transfers, smart-contract call/deploy, event decoding, staking, and key management."
+      "source": "./plugins/tronz",
+      "version": "0.2.0",
+      "description": "Build and review tronz 0.3.x Rust clients using verified providers, transfers, contracts, events, staking, and signer APIs."
     }
   ]
 }

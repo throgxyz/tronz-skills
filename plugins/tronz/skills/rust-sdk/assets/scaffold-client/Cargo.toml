@@ -1,0 +1,11 @@
+[package]
+name = "tronz-client"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+publish = false
+
+[dependencies]
+anyhow = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tronz = "0.3"

@@ -1,128 +1,81 @@
 ---
 name: rust-sdk
 description: >-
-  Write, review, or debug Rust code that uses the **tronz** SDK — the idiomatic,
-  async-first Rust SDK for the TRON blockchain, modeled on alloy. Use this skill
-  whenever the task involves tronz or building a TRON client in Rust: connecting
-  to a node over gRPC, sending TRX / TRC10 / TRC20 transfers, querying balances
-  and account resources, calling or deploying TVM smart contracts, encoding
-  calldata, decoding logs/events, estimating energy, staking (freeze / unfreeze /
-  delegate / claim rewards), voting for super representatives, or managing keys
-  (LocalSigner, mnemonic, keystore). Trigger this even when the user only says
-  "TRON in Rust", "TRC20 in Rust", "decode a TRON event", or names a crate like
-  tronz-provider, tronz-contract, tronz-signer, or tronz-primitives — even if
-  they don't say "tronz" explicitly. Do NOT use for the TronWeb/TronBox JS stack
-  or for gotron Go SDKs.
+  Build, review, or debug Rust applications using tronz 0.3.x, including gRPC
+  providers, TRX/TRC10/TRC20/TRC721 transfers, account and resource queries,
+  TVM contract calls and deployment, tron_sol! bindings, events, staking,
+  governance, LocalSigner, mnemonics, keystores, and AWS KMS. Use whenever a
+  task involves tronz, a tronz-* crate, or TRON development in Rust. Do not use
+  for TronWeb, TronBox, Java, or Go SDKs.
 ---
 
-# tronz — Rust SDK for TRON
+# tronz Rust SDK
 
-`tronz` is an async-first Rust SDK for TRON, deliberately mirroring
-[alloy](https://github.com/alloy-rs/alloy)'s shapes (`ProviderBuilder`, filler
-chain, `sol!` bindings). If you know alloy, the ergonomics transfer directly.
-TVM is EVM-compatible at the contract layer, so TRC20 ABI encode/decode is
-identical to ERC-20 — tronz reuses alloy's ABI machinery.
+Target `tronz 0.3.x`. Treat exact API names as version-sensitive.
 
-**Bias toward the repo, not memory.** API names below are verified against
-tronz 0.1.x, but versions move. When unsure of an exact signature, read the
-matching file in the `tronz-examples` repo (see `examples-index.md`) or the crate
-source rather than guessing.
+## Work from evidence
 
-**MSRV: Rust 1.85 (2024 edition).** Everything is `async` and assumes tokio.
+1. Inspect the project's installed `tronz` version and enabled features.
+2. Prefer local crate source when available; otherwise use the official
+   [documentation](https://throgxyz.github.io/docs/) and
+   [runnable examples](https://github.com/throgxyz/examples).
+3. Read [references/api-map.md](references/api-map.md) for the task's API and
+   example route.
+4. Read [references/pitfalls.md](references/pitfalls.md) before generating
+   transaction, amount, address, contract, or event code.
+5. Compile or test generated Rust when a project or toolchain is available.
+6. Do not infer missing APIs from alloy, TronWeb, or older tronz releases.
 
-## Crate map
+## Minimal setup
 
-| Crate | What's in it |
-|---|---|
-| `tronz` | Meta-crate. Re-exports everything. Depend on this. |
-| `tronz-primitives` | `Address`, `Trx`, `U256`/`B256`/`Bytes`, `ResourceCode`, `RecoverableSignature` |
-| `tronz-signer` | `TronSigner` trait, `LocalSigner`, `MnemonicBuilder`, keystore |
-| `tronz-provider` | gRPC transport, `ProviderBuilder`, `TronProvider`, fillers, native-tx builders, endpoint consts |
-| `tronz-contract` | `ContractInstance`, `Interface`, TRC20 bindings (`ITRC20`), `decode_logs`, deploy/call builders |
-
-## Setup
+The default feature set includes the TLS gRPC provider, contracts, and
+`LocalSigner`:
 
 ```toml
 [dependencies]
-tronz = { version = "0.1", features = ["full"] }
-tokio = { version = "1", features = ["full"] }
 anyhow = "1"
-hex = "0.4"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+tronz = "0.3"
 ```
 
-Feature flags: `contract` (TRC20/Interface), `signer-mnemonic`, `signer-keystore`;
-`full` turns them all on. Dynamic-ABI work also pulls `alloy-json-abi` + `alloy-dyn-abi`.
+Enable optional features only when needed:
 
-## Three things that cause most bugs — internalize these first
+- `signer-mnemonic` — BIP-39/BIP-44 derivation.
+- `signer-keystore` — Web3 Secret Storage V3.
+- `signer-aws` — AWS KMS signer.
+- `provider-grpc` — gRPC transport without TLS.
 
-1. **Read-only vs signing provider.** A bare provider does every `get_*`/`call`
-   read. To *send* anything you MUST attach a signer AND the recommended fillers,
-   or the tx has no reference block / fee limit and gets rejected:
-   ```rust
-   let read = ProviderBuilder::new().on_grpc(TRONGRID_NILE).await?;          // reads only
-   let send = ProviderBuilder::new()
-       .with_recommended_fillers()   // auto TAPOS ref-block + fee_limit + signing (alloy JoinFill analogue)
-       .with_signer(signer)
-       .maybe_api_key(api_key)       // Option<String>, TronGrid key
-       .on_grpc(TRONGRID_NILE).await?;
-   ```
+`full` is currently an alias for the default feature set; it does not enable
+the optional signer features.
 
-2. **Addresses have three forms — convert with `.into()`.**
-   - `tronz::Address`: base58check (`T...`). Use everywhere in tronz APIs. `"T...".parse()?`
-   - On the wire: 21 bytes with `0x41` prefix.
-   - Inside **ABI** (calldata, `DynSolValue::Address`, decoded event fields): **20-byte EVM form**, prefix stripped.
-   - `tronz::Address → alloy Address` for ABI args; decoded `alloy Address → tronz::Address` to print `T...`:
-     ```rust
-     let arg = addr.into();                      // tronz -> alloy (ABI)
-     let shown: tronz::Address = evt.from.into(); // alloy -> tronz (display)
-     ```
+## Non-negotiable rules
 
-3. **Amounts.** `Trx::from_sun(i64)?` builds; `.as_sun()` / `.as_trx()` read.
-   `1 TRX = 1_000_000 sun`. **Token** amounts are raw `U256` with NO implicit
-   decimals — divide by `10^decimals` yourself for display.
+- Use a bare provider for reads. For sends, attach both
+  `.with_recommended_fillers()` and `.with_signer(...)`.
+- Use `tronz::Address` in TRON APIs. Convert to/from alloy's 20-byte address at
+  ABI boundaries with `.into()`.
+- Parse TRX exactly with `"1.5".parse::<Trx>()` or `parse_trx`; never use
+  floating point. Format with `Display` or `format_trx`.
+- Use `Trx` only for native TRX/sun. Use raw `U256` plus token decimals for
+  TRC20/TRC721 values.
+- Inspect both receipt `status` and `contract_result` for contract writes.
+- Treat `tron_sol!` as Alpha. Prefer built-in TRC20/TRC721 instances for
+  standard tokens.
+- Do not assume `eth_getLogs`; query and decode TRON transaction receipts.
 
-## Decision trees
+## Choose the API
 
-**Connecting**
-```
-need to send a tx?  ── no ──> ProviderBuilder::new().on_grpc(ep)
-                    └─ yes ─> + .with_recommended_fillers().with_signer(s)
-```
+- Native TRX: `TronProvider::send_trx()`.
+- TRC10: extension APIs under `tronz::providers::ext`.
+- TRC20: `Trc20Ext::trc20(address)`.
+- TRC721: `Trc721Ext::trc721(address)`.
+- Compile-time custom ABI: `tron_sol!`.
+- Runtime JSON ABI: `Interface` and `ContractInstance`.
+- Raw calldata: `ContractInstance::call_raw`.
+- Events: generated filters or `decode_log` / `decode_logs`.
+- Stake 2.0: `freeze_balance`, `unfreeze_balance`, `delegate_resource`, and
+  `undelegate_resource`.
 
-**Calling a contract**
-```
-ABI known at compile time? ── yes ──> sol! bindings (ITRC20 or your own sol!{})  → typed args/returns
-                           └─ no  ──> Interface::new(JsonAbi)                     → DynSolValue
-is it a standard TRC20?    ── yes ──> provider.trc20(addr)  (Trc20Ext, typed reads+writes)
-                           └─ no  ──> provider.contract(addr, interface) + call / call_raw
-```
-
-**Staking**
-```
-account on Stake 2.0 (current)? ── yes ──> freeze_balance() / unfreeze_balance() / delegate_resource()
-                                └─ no  ──> freeze_balance_v1() / unfreeze_balance_v1()   (legacy 1.0)
-```
-
-**Sending value**
-```
-native TRX        → provider.send_trx()
-TRC10 asset       → provider.transfer_trc10()
-TRC20 token       → provider.trc20(addr).transfer(...)   or   ITRC20::transferCall + call_raw
-```
-
-## Where to go next (load the reference for the task)
-
-| Task | Read |
-|---|---|
-| Connect, read chain/account state, receipts, fillers, endpoints | `references/providers.md` |
-| Keys: LocalSigner, mnemonic, keystore, signing | `references/signers.md` |
-| Send TRX / TRC10 / TRC20, balances, amount math | `references/transfers.md` |
-| Call/deploy contracts, static vs dynamic ABI, estimate energy | `references/contracts.md` |
-| Decode logs/events, topic0, event types | `references/events.md` |
-| Freeze/delegate/rewards, resources | `references/staking.md` |
-| Vote for SRs, create/update accounts, witnesses | `references/governance.md` |
-| Common errors → cause → fix; per-crate error types | `references/errors.md` |
-| Map a task to a runnable example in the repo | `examples-index.md` |
-
-Every capability has a focused, compiling example in the `tronz-examples` repo.
-When in doubt, read the example before writing code.
+For a new read-only client, copy the template in
+[assets/scaffold-client](assets/scaffold-client). For an interactive Claude Code
+workflow, use `/tronz:scaffold-client`.

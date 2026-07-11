@@ -1,21 +1,16 @@
 # tronz plugin
 
-Claude Code plugin for the [tronz](https://github.com/throgxyz/tronz) Rust SDK for TRON.
+Claude Code plugin for the [tronz](https://github.com/throgxyz/tronz) Rust SDK.
 
-## Contents
+It contains:
 
-- `skills/rust-sdk/` — the `rust-sdk` skill: write, review, and debug Rust code
-  that uses tronz (providers, TRX/TRC10/TRC20 transfers, smart-contract
-  call/deploy, event decoding, staking, key management).
-- `commands/scaffold-client.md` — `/tronz:scaffold-client`, scaffolds a minimal
-  read-only tronz client.
+- `skills/rust-sdk/` — a concise tronz 0.3.x Agent Skill.
+- `commands/scaffold-client.md` — a command that copies and checks the bundled
+  read-only client template.
 
-## Install
+Install from the marketplace:
 
-```
+```text
 /plugin marketplace add throgxyz/tronz-skills
 /plugin install tronz@tronz
 ```
-
-The skill folder also follows the open Agent Skills standard and can be copied
-directly into any compatible host — see `skills/rust-sdk/INSTALL.md`.

@@ -1,42 +1,20 @@
 ---
 name: scaffold-client
-description: Scaffold a minimal tronz read-only client (connect + query balance) the user can run immediately.
+description: Scaffold a minimal compiling tronz 0.3.x read-only client.
 ---
 
-# /tronz:scaffold-client
+# `/tronz:scaffold-client`
 
-Generate a minimal, compiling tronz program that connects to a network and reads
-an address balance. Ask only for what you can't infer; default to mainnet + USDT.
+Create a new read-only tronz client from
+`${CLAUDE_PLUGIN_ROOT}/skills/rust-sdk/assets/scaffold-client/`.
 
-Steps:
-1. Confirm network (mainnet vs Nile) and the address to query. Default mainnet.
-2. Emit a `Cargo.toml` with `tronz = { version = "0.1", features = ["full"] }`,
-   `tokio`, `anyhow`, `hex`.
-3. Emit `src/main.rs`:
-
-```rust
-use tronz::{ProviderBuilder, TronProvider, TRONGRID_MAINNET, contract::Trc20Ext};
-
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
-    let provider = ProviderBuilder::new().on_grpc(TRONGRID_MAINNET).await?;
-
-    // native TRX
-    let addr: tronz::Address = "T...".parse()?;
-    let acct = provider.get_account(addr).await?;
-    println!("TRX: {}", acct.balance.as_trx());
-
-    // a TRC20 token (USDT mainnet shown)
-    let usdt: tronz::Address = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".parse()?;
-    let token = provider.trc20(usdt);
-    let raw = token.balance_of(addr).await?;
-    let dec = token.decimals().await?;
-    println!("{}: {} (raw {})", token.symbol().await?, raw, dec);
-    Ok(())
-}
-```
-
-4. Remind: this is read-only (no signer/fillers). To send, add
-   `.with_recommended_fillers().with_signer(LocalSigner::from_hex(..)?)` — point
-   the user to the `rust-sdk` skill's `references/providers.md` and
-   `references/transfers.md`.
+1. Ask for the destination only when it cannot be inferred. Do not overwrite
+   existing files without confirmation.
+2. Copy that template directory to the destination. Resolve it from
+   `${CLAUDE_PLUGIN_ROOT}`; do not look for it relative to the user's project.
+3. Keep mainnet unless the user requests Nile; then replace
+   `TRONGRID_MAINNET` with `TRONGRID_NILE`.
+4. Run `cargo check` in the generated project.
+5. Tell the user to set `TRON_ADDRESS` before running it.
+6. Do not add a signer or private key to this read-only scaffold. For sends,
+   explain that recommended fillers and a signer are both required.

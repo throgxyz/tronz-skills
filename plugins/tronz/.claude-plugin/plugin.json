@@ -1,7 +1,7 @@
 {
   "name": "tronz",
-  "version": "0.1.0",
-  "description": "tronz Rust SDK skill + scaffolding command for TRON.",
+  "version": "0.2.0",
+  "description": "tronz 0.3.x Rust SDK skill and verified client scaffold for TRON.",
   "author": {
     "name": "throgxyz"
   }

@@ -1,55 +1,68 @@
-# tronz-skills
+# tronz Skills
 
-Agent Skills and a Claude Code plugin for the
+Official Agent Skill and Claude Code plugin for the
 [tronz](https://github.com/throgxyz/tronz) Rust SDK for TRON.
 
-The `rust-sdk` skill teaches an AI agent to write, review, and debug Rust code
-that uses tronz: building providers, sending TRX / TRC10 / TRC20, calling and
-deploying TVM contracts, decoding events, staking, governance, and key
-management — with verified API names instead of guesses.
-
-## Layout
-
-```
-tronz-skills/
-├── .claude-plugin/
-│   └── marketplace.json          # Claude Code plugin marketplace
-└── plugins/
-    └── tronz/                    # the plugin
-        ├── .claude-plugin/plugin.json
-        ├── commands/
-        │   └── scaffold-client.md   # /tronz:scaffold-client
-        └── skills/
-            └── rust-sdk/            # the skill (SKILL.md + references/)
-```
+The `rust-sdk` skill helps agents choose verified tronz 0.3.x APIs, avoid
+TRON-specific integration mistakes, and route to the official
+[documentation](https://throgxyz.github.io/docs/) and
+[runnable examples](https://github.com/throgxyz/examples).
 
 ## Install
 
-### Claude Code (plugin marketplace)
+### Claude Code plugin
 
-```
+```text
 /plugin marketplace add throgxyz/tronz-skills
 /plugin install tronz@tronz
 ```
 
-The skill loads as `tronz:rust-sdk`; the command is `/tronz:scaffold-client`.
+This installs the `tronz:rust-sdk` skill and the
+`/tronz:scaffold-client` command.
 
-### Any other host (manual copy)
+### Agent Skill
 
-`plugins/tronz/skills/rust-sdk/` follows the open Agent Skills standard and works
-with Cursor, Codex, Gemini CLI, and others:
+Copy `plugins/tronz/skills/rust-sdk/` into the skill directory used by your
+agent host. Common locations include:
 
-```bash
-mkdir -p ~/.claude/skills && cp -r plugins/tronz/skills/rust-sdk ~/.claude/skills/
+```text
+.claude/skills/rust-sdk/   # Claude Code, project-local
+~/.claude/skills/rust-sdk/ # Claude Code, user-local
+~/.codex/skills/rust-sdk/  # Codex, user-local
 ```
 
-See `plugins/tronz/skills/rust-sdk/INSTALL.md` for per-host details.
+Consult the host's current documentation when its discovery path differs.
 
-## Keeping it current
+## Contents
 
-The skill is versioned alongside the SDK. When the public tronz API changes,
-update the matching `references/*.md` and `examples-index.md` in the same PR that
-changes the crate, so the skill never drifts.
+```text
+plugins/tronz/
+├── commands/scaffold-client.md
+└── skills/rust-sdk/
+    ├── SKILL.md
+    ├── agents/openai.yaml
+    ├── assets/scaffold-client/
+    └── references/
+        ├── api-map.md
+        └── pitfalls.md
+```
+
+The skill is intentionally thin: detailed tutorials live in the docs and full
+programs live in the examples repository.
+
+## Validate
+
+Run the local checks:
+
+```sh
+./scripts/validate.sh
+```
+
+The validation rejects known pre-0.3 APIs, validates `SKILL.md`, parses plugin
+JSON, and compiles the scaffold client.
+
+When tronz publishes a new minor release, update the version-sensitive rules,
+API map, and scaffold in the same change, then run validation.
 
 ## License
 
