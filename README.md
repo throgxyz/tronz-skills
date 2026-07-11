@@ -1,5 +1,10 @@
 # tronz Skills
 
+[![CI](https://github.com/throgxyz/tronz-skills/actions/workflows/ci.yml/badge.svg)](https://github.com/throgxyz/tronz-skills/actions/workflows/ci.yml)
+[![tronz 0.3.x](https://img.shields.io/badge/tronz-0.3.x-4c1)](https://github.com/throgxyz/tronz/releases/tag/v0.3.0)
+[![plugin 0.2.0](https://img.shields.io/badge/plugin-0.2.0-blue)](https://github.com/throgxyz/tronz-skills)
+[![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](https://github.com/throgxyz/tronz-skills#license)
+
 Official Agent Skill and Claude Code plugin for the
 [tronz](https://github.com/throgxyz/tronz) Rust SDK for TRON.
 
@@ -57,6 +62,8 @@ Run the local checks:
 ```sh
 ./scripts/validate.sh
 ```
+
+The scaffold build requires `protoc` (`protobuf-compiler` on Debian/Ubuntu).
 
 The validation rejects known pre-0.3 APIs, validates `SKILL.md`, parses plugin
 JSON, and compiles the scaffold client.
